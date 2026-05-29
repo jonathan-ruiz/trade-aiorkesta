@@ -1,0 +1,105 @@
+name: Lint + Typecheck + Test + Build
+
+# Runs on all PRs and main branch pushes. Blocks auto-merge until green.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect package manager
+        id: detect
+        run: |
+          if [ -f "pnpm-lock.yaml" ]; then
+            echo "pm=pnpm" >> $GITHUB_OUTPUT
+            echo "lockfile=pnpm-lock.yaml" >> $GITHUB_OUTPUT
+          elif [ -f "yarn.lock" ]; then
+            echo "pm=yarn" >> $GITHUB_OUTPUT
+            echo "lockfile=yarn.lock" >> $GITHUB_OUTPUT
+          elif [ -f "package-lock.json" ]; then
+            echo "pm=npm" >> $GITHUB_OUTPUT
+            echo "lockfile=package-lock.json" >> $GITHUB_OUTPUT
+          elif [ -f "bun.lockb" ]; then
+            echo "pm=bun" >> $GITHUB_OUTPUT
+            echo "lockfile=bun.lockb" >> $GITHUB_OUTPUT
+          else
+            echo "pm=npm" >> $GITHUB_OUTPUT
+            echo "lockfile=none" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Node.js
+        if: steps.detect.outputs.pm != 'bun'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: ${{ steps.detect.outputs.pm }}
+
+      - name: Setup Bun
+        if: steps.detect.outputs.pm == 'bun'
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Setup pnpm
+        if: steps.detect.outputs.pm == 'pnpm'
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: |
+          if [ -f "package.json" ]; then
+            case "${{ steps.detect.outputs.pm }}" in
+              pnpm) pnpm install --frozen-lockfile ;;
+              yarn) yarn install --frozen-lockfile ;;
+              bun) bun install --frozen-lockfile ;;
+              npm) npm ci ;;
+            esac
+          else
+            echo "No package.json found - skipping install"
+          fi
+
+      - name: Lint
+        run: |
+          if [ -f "package.json" ] && grep -q '"lint"' package.json; then
+            ${{ steps.detect.outputs.pm }} run lint
+          else
+            echo "No lint script defined - skipping"
+          fi
+
+      - name: Typecheck
+        run: |
+          if [ -f "package.json" ] && grep -q '"typecheck"' package.json; then
+            ${{ steps.detect.outputs.pm }} run typecheck
+          elif [ -f "tsconfig.json" ]; then
+            npx tsc --noEmit
+          else
+            echo "No typecheck script or tsconfig.json - skipping"
+          fi
+
+      - name: Test
+        run: |
+          if [ -f "package.json" ] && grep -q '"test"' package.json; then
+            ${{ steps.detect.outputs.pm }} run test
+          else
+            echo "No test script defined - skipping"
+          fi
+
+      - name: Build
+        run: |
+          if [ -f "package.json" ] && grep -q '"build"' package.json; then
+            ${{ steps.detect.outputs.pm }} run build
+          else
+            echo "No build script defined - skipping"
+          fi
