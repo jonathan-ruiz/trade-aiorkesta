@@ -1,0 +1,93 @@
+name: Auto-merge PRs on green
+
+# Ports the aiorkesta auto-merge pattern. Polls every open PR after a
+# trigger fires and merges any whose mergeStateStatus is CLEAN (all
+# required checks green + reviews satisfied). Opt out with the
+# `no-auto-merge` label on a PR.
+#
+# Triggers:
+#   - pull_request: opened / ready_for_review / synchronize / reopened /
+#     unlabeled — sweeps right after PR motion
+#   - workflow_run: completed runs of any "CI" / "Tests" / "Deploy" /
+#     "E2E" workflow (the names this org uses). If your repo has a
+#     different CI workflow name, add it here.
+#   - workflow_dispatch: manual sweep
+
+on:
+  pull_request:
+    types: [opened, ready_for_review, synchronize, reopened, unlabeled]
+  workflow_run:
+    workflows: ["CI", "Tests", "Deploy", "E2E", "Lint + Typecheck + Test + Build"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+  checks: read
+
+concurrency:
+  group: >-
+    ${{
+      github.event_name == 'pull_request'
+        && format('auto-merge-pr-{0}', github.event.pull_request.number)
+        || 'auto-merge-sweep'
+    }}
+  cancel-in-progress: true
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge eligible PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -uo pipefail
+
+          mapfile -t prs < <(
+            gh pr list --repo "$REPO" --state open --json number,labels \
+              -q '.[] | select(.labels | map(.name) | index("no-auto-merge") | not) | .number'
+          )
+
+          if [ ${#prs[@]} -eq 0 ]; then
+            echo "No eligible PRs."
+            exit 0
+          fi
+
+          MERGED=false
+
+          for pr in "${prs[@]}"; do
+            data=$(gh pr view "$pr" --repo "$REPO" --json mergeStateStatus,mergeable,isDraft)
+            status=$(jq -r .mergeStateStatus <<<"$data")
+            mergeable=$(jq -r .mergeable <<<"$data")
+            draft=$(jq -r .isDraft <<<"$data")
+            echo "PR #$pr — mergeStateStatus=$status mergeable=$mergeable draft=$draft"
+
+            if [ "$draft" = "true" ]; then continue; fi
+
+            merge_eligible=false
+            if [ "$status" = "CLEAN" ] && [ "$mergeable" = "MERGEABLE" ]; then
+              merge_eligible=true
+            elif [ "$status" = "UNSTABLE" ] && [ "$mergeable" = "MERGEABLE" ]; then
+              # Only "sweep" failing is acceptable — that is this workflow's
+              # concurrency-cancelled stale run.
+              non_green=$(gh pr view "$pr" --repo "$REPO" --json statusCheckRollup \
+                -q '[.statusCheckRollup[] | select(.conclusion != "SUCCESS" and .conclusion != "SKIPPED" and .conclusion != null) | .name] | unique')
+              if [ "$non_green" = '["sweep"]' ]; then
+                echo "PR #$pr — UNSTABLE but only sweep is non-green, bypassing"
+                merge_eligible=true
+              fi
+            fi
+
+            if [ "$merge_eligible" = "true" ]; then
+              echo "Merging PR #$pr"
+              if gh pr merge "$pr" --repo "$REPO" --squash --delete-branch; then
+                MERGED=true
+              else
+                echo "Merge failed for #$pr (likely raced with another job)"
+              fi
+            fi
+          done
