@@ -1,0 +1,23 @@
+{
+  "name": "@trade-aiorkesta/audit",
+  "version": "0.1.0",
+  "description": "Immutable audit trail for all decisions and trades",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts"
+  },
+  "keywords": ["audit", "logging", "compliance"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "pg": "^8.11.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/pg": "^8.10.9",
+    "typescript": "^5.3.3"
+  }
+}
