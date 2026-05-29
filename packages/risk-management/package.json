@@ -1,0 +1,20 @@
+{
+  "name": "@trade-aiorkesta/risk-management",
+  "version": "0.1.0",
+  "description": "Risk management and safety framework for autonomous trading",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "keywords": [
+    "risk-management",
+    "trading",
+    "safety",
+    "position-limits",
+    "kill-switch"
+  ],
+  "author": "eToro Trader Team",
+  "license": "MIT"
+}
