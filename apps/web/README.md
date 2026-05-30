@@ -18,3 +18,13 @@ Key pages:
 - `/portfolio` — Live positions and performance
 - `/audit` — Decision history with full context
 - `/settings` — API credentials, risk limits, mode toggle
+
+## Getting Started
+
+First, run the development server:
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
