@@ -1,0 +1,29 @@
+{
+  "name": "@trade-aiorkesta/server",
+  "version": "0.1.0",
+  "description": "Central orchestrator service for trade execution",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "test": "jest"
+  },
+  "keywords": [
+    "orchestrator",
+    "trading",
+    "automation"
+  ],
+  "author": "eToro Trader Team",
+  "license": "MIT",
+  "dependencies": {
+    "@trade-aiorkesta/audit": "workspace:*",
+    "@trade-aiorkesta/etoro-client": "workspace:*",
+    "@trade-aiorkesta/risk-management": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  }
+}
