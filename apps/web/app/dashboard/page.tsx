@@ -26,10 +26,16 @@ function SummaryCard({
   tooltip,
 }: SummaryCardProps) {
   return (
-    <div className="rounded-lg bg-white p-6 shadow" title={tooltip}>
+    <div
+      className="rounded-lg bg-white p-6 shadow"
+      aria-label={tooltip || title}
+    >
       <div className="text-sm text-gray-600">{title}</div>
       <div className={`mt-2 text-3xl font-bold ${valueColor}`}>{value}</div>
       <div className="mt-1 text-xs text-gray-500">{subtitle}</div>
+      {tooltip && (
+        <span className="sr-only">{tooltip}</span>
+      )}
     </div>
   );
 }
@@ -53,12 +59,10 @@ export default function DashboardPage() {
     0
   );
 
-  // Calculate realized P&L from today's closed trades
-  const realizedPnL = trades.reduce((sum, trade) => {
-    // Simplified: assume all trades contribute to realized P&L
-    // In reality, need to match buy/sell pairs
-    return sum + (trade.action === "SELL" ? trade.totalValue : -trade.totalValue);
-  }, 0);
+  // TODO: Backend must provide realized P&L
+  // Requires matching buy/sell pairs with cost basis tracking
+  // Current mock data doesn't have sufficient info for accurate calculation
+  const realizedPnL = 0; // Placeholder until backend integration
 
   const portfolioValue = positions.reduce(
     (sum, pos) => sum + pos.quantity * pos.currentPrice,

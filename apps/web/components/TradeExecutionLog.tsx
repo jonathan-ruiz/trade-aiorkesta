@@ -1,11 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { useTradeLog } from "../hooks/useTradeLog";
 
 export function TradeExecutionLog() {
   const { trades, isLoading, error, loadMore, hasMore } = useTradeLog();
-  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (isLoading && trades.length === 0) {
     return (
@@ -117,9 +115,9 @@ export function TradeExecutionLog() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={`View audit trail for ${trade.symbol} ${trade.action} at ${new Date(trade.executedAt).toLocaleTimeString()}`}
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-xs font-medium text-blue-600 hover:text-blue-800"
                   >
-                    →
+                    View
                   </a>
                 </td>
               </tr>
