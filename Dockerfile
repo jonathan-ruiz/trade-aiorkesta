@@ -57,11 +57,10 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 trader
 
-# Copy built artifacts
-# Adjust these paths once the actual structure is defined
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=trader:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=trader:nodejs /app/.next/static ./.next/static
+# Copy built artifacts from workspace
+COPY --from=builder /app/apps/web/public ./public
+COPY --from=builder --chown=trader:nodejs /app/apps/web/.next/standalone ./
+COPY --from=builder --chown=trader:nodejs /app/apps/web/.next/static ./.next/static
 
 USER trader
 
