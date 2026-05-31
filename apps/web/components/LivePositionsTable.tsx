@@ -98,11 +98,13 @@ export function LivePositionsTable() {
                 <td className="py-3 text-gray-700">
                   ${position.entryPrice.toFixed(2)}
                 </td>
-                <td className="py-3 text-gray-700" aria-live="polite">
+                <td className="py-3 text-gray-700">
                   ${position.currentPrice.toFixed(2)}
                   {isStale && (
                     <span
                       className="ml-2 inline-block h-2 w-2 rounded-full bg-amber-500"
+                      role="status"
+                      aria-label="Data may be stale (more than 60 seconds old)"
                       title="Data may be stale (>60s old)"
                     />
                   )}

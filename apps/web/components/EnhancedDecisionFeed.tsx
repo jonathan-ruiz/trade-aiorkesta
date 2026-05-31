@@ -47,11 +47,12 @@ export function EnhancedDecisionFeed() {
         <h2 className="text-xl font-semibold text-gray-900">
           Decision History Feed
         </h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2" role="group" aria-label="Filter decisions by status">
           {["all", "pending", "executed", "rejected"].map((status) => (
             <button
               key={status}
               onClick={() => setFilterStatus(status)}
+              aria-pressed={filterStatus === status}
               className={`rounded px-3 py-1 text-xs font-semibold ${
                 filterStatus === status
                   ? "bg-blue-600 text-white"
@@ -111,7 +112,7 @@ export function EnhancedDecisionFeed() {
                       ${decision.recommendedAmount}
                     </span>
                     <span className={`text-xs font-medium ${badge.className}`}>
-                      {badge.icon} {badge.text}
+                      <span aria-hidden="true">{badge.icon}</span> {badge.text}
                     </span>
                   </div>
                   <time
@@ -133,6 +134,7 @@ export function EnhancedDecisionFeed() {
                   <div className="h-2 overflow-hidden rounded-full bg-gray-200">
                     <div
                       role="meter"
+                      aria-label="AI Confidence"
                       aria-valuenow={decision.aiConfidence}
                       aria-valuemin={0}
                       aria-valuemax={100}

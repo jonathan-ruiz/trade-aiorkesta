@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface KillSwitchProps {
   currentPositionsCount: number;
@@ -18,6 +18,8 @@ export function KillSwitch({
   const [isActivating, setIsActivating] = useState(false);
   const [cooldownEnd, setCooldownEnd] = useState<Date | null>(null);
   const [timeRemaining, setTimeRemaining] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Check for active kill switch in localStorage
@@ -61,10 +63,59 @@ export function KillSwitch({
     return () => clearInterval(interval);
   }, [cooldownEnd]);
 
+  // Focus trap and keyboard handling
+  useEffect(() => {
+    if (!showModal) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        closeModal();
+      }
+
+      if (e.key === "Tab") {
+        const modal = modalRef.current;
+        if (!modal) return;
+
+        const focusable = modal.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    // Focus first focusable element
+    const modal = modalRef.current;
+    if (modal) {
+      const firstFocusable = modal.querySelector<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      firstFocusable?.focus();
+    }
+
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [showModal]);
+
   const openModal = () => {
     setShowModal(true);
     setStep(1);
     setConfirmText("");
+    setError(null);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setError(null);
   };
 
   const handleStep1Continue = () => {
@@ -75,6 +126,7 @@ export function KillSwitch({
 
   const handleActivate = async () => {
     setIsActivating(true);
+    setError(null);
 
     try {
       const response = await fetch("/api/kill-switch/activate", {
@@ -96,8 +148,8 @@ export function KillSwitch({
       localStorage.setItem("kill-switch-active", "true");
       localStorage.setItem("kill-switch-cooldown-end", end.toISOString());
     } catch (err) {
-      alert(
-        `Error activating kill switch: ${err instanceof Error ? err.message : "Unknown error"}`
+      setError(
+        err instanceof Error ? err.message : "Unknown error occurred"
       );
     } finally {
       setIsActivating(false);
@@ -156,14 +208,16 @@ export function KillSwitch({
           className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80"
           role="alertdialog"
           aria-modal="true"
+          aria-labelledby={step === 1 ? "modal-title-step1" : "modal-title-step2"}
+          aria-describedby={step === 1 ? "modal-desc-step1" : "modal-desc-step2"}
         >
-          <div className="w-full max-w-md rounded-lg bg-white p-6">
+          <div ref={modalRef} className="w-full max-w-md rounded-lg bg-white p-6">
             {step === 1 ? (
               <>
-                <h3 className="mb-4 text-xl font-bold text-gray-900">
+                <h3 id="modal-title-step1" className="mb-4 text-xl font-bold text-gray-900">
                   ⚠️ CONFIRM EMERGENCY STOP
                 </h3>
-                <div className="mb-4 space-y-2 text-sm text-gray-700">
+                <div id="modal-desc-step1" className="mb-4 space-y-2 text-sm text-gray-700">
                   <p>This will:</p>
                   <ul className="list-inside list-disc space-y-1">
                     <li>Halt all pending AI decisions</li>
@@ -187,9 +241,14 @@ export function KillSwitch({
                     className="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
                   />
                 </div>
+                {error && (
+                  <div className="mb-4 rounded bg-red-50 p-3" role="alert">
+                    <span className="text-sm text-red-800">⚠️ {error}</span>
+                  </div>
+                )}
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setShowModal(false)}
+                    onClick={closeModal}
                     className="flex-1 rounded bg-gray-200 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-300"
                   >
                     Cancel
@@ -205,10 +264,10 @@ export function KillSwitch({
               </>
             ) : (
               <>
-                <h3 className="mb-4 text-xl font-bold text-red-600">
+                <h3 id="modal-title-step2" className="mb-4 text-xl font-bold text-red-600">
                   🛑 FINAL CONFIRMATION
                 </h3>
-                <div className="mb-4 text-sm text-gray-700">
+                <div id="modal-desc-step2" className="mb-4 text-sm text-gray-700">
                   <p className="mb-3">
                     You are about to stop all trading. This action CANNOT be
                     undone.
@@ -232,9 +291,14 @@ export function KillSwitch({
                     </p>
                   </div>
                 </div>
+                {error && (
+                  <div className="mb-4 rounded bg-red-50 p-3" role="alert">
+                    <span className="text-sm text-red-800">⚠️ {error}</span>
+                  </div>
+                )}
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setShowModal(false)}
+                    onClick={closeModal}
                     disabled={isActivating}
                     className="flex-1 rounded bg-gray-200 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-300 disabled:bg-gray-100"
                   >
