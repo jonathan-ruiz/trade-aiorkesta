@@ -6,7 +6,6 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "jest",
     "lint": "eslint src/**/*.ts"
   },
   "keywords": ["ai", "trading", "decision-making", "claude"],
