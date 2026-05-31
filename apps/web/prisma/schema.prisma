@@ -1,0 +1,110 @@
+// Prisma schema for trading bot database
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model KillSwitch {
+  id            String   @id @default(cuid())
+  activatedAt   DateTime @default(now())
+  activatedBy   String   // API key or user identifier
+  cooldownEnd   DateTime
+  positionsClosed Int     @default(0)
+  status        String   @default("active") // active, expired
+  reason        String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status, cooldownEnd])
+  @@map("kill_switches")
+}
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  eventType     String   // KILL_SWITCH_ACTIVATED, POSITION_CLOSED, etc.
+  performedBy   String   // API key or user identifier
+  metadata      Json     // Flexible JSON for event details
+  ipAddress     String?
+
+  createdAt     DateTime @default(now())
+
+  @@index([eventType, createdAt])
+  @@index([performedBy, createdAt])
+  @@map("audit_logs")
+}
+
+model Decision {
+  id                String   @id @default(cuid())
+  timestamp         DateTime @default(now())
+  action            String   // BUY, SELL
+  symbol            String
+  recommendedAmount Float
+  aiConfidence      Int
+  triggerRules      String[] // Array of rule descriptions
+  dataSourcesUsed   String[] // Array of data sources
+  status            String   // pending, executed, rejected
+  reason            String
+
+  // Execution details (populated when executed)
+  executedAmount    Float?
+  executedAt        DateTime?
+  tradeId           String?
+  rejectionReason   String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([status, timestamp])
+  @@index([symbol, timestamp])
+  @@map("decisions")
+}
+
+model Trade {
+  id              String   @id @default(cuid())
+  decisionId      String?
+  symbol          String
+  action          String   // BUY, SELL
+  quantity        Float
+  price           Float
+  totalValue      Float
+  executedAt      DateTime @default(now())
+  eToroTradeId    String?
+  auditTrailUrl   String?
+  source          String   // AI, MANUAL
+
+  // Cost basis tracking for P&L
+  costBasis       Float?   // For sell trades, the cost basis of the sold position
+  realizedPnL     Float?   // Calculated: (price - costBasis) * quantity for sells
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([symbol, executedAt])
+  @@index([source, executedAt])
+  @@map("trades")
+}
+
+model Position {
+  id                    String   @id @default(cuid())
+  eToroPositionId       String   @unique
+  symbol                String
+  quantity              Float
+  entryPrice            Float
+  currentPrice          Float
+  unrealizedPnL         Float
+  unrealizedPnLPercent  Float
+  openedAt              DateTime
+  lastUpdated           DateTime @updatedAt
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([symbol])
+  @@map("positions")
+}
