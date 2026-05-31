@@ -57,6 +57,9 @@ jobs:
         with:
           version: 8
 
+      - name: Debug - List files
+        run: ls -la
+
       - name: Install dependencies
         run: |
           if [ -f "package.json" ]; then
