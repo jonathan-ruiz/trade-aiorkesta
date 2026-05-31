@@ -17,9 +17,9 @@
   "author": "eToro Trader Team",
   "license": "MIT",
   "dependencies": {
-    "@trade-aiorkesta/audit": "workspace:*",
-    "@trade-aiorkesta/etoro-client": "workspace:*",
-    "@trade-aiorkesta/risk-management": "workspace:*"
+    "@trade-aiorkesta/audit": "*",
+    "@trade-aiorkesta/etoro-client": "*",
+    "@trade-aiorkesta/risk-management": "*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
