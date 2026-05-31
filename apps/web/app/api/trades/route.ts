@@ -1,6 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import {
+  authenticateRequest,
+  validatePaginationParams,
+} from "@/lib/auth";
 
 // Mock data - replace with actual database query
+// NOTE: For SELL trades, costBasis and realizedPnL should be calculated
 const mockTrades = [
   {
     id: "trade-1",
@@ -10,6 +15,8 @@ const mockTrades = [
     quantity: 10,
     price: 150.0,
     totalValue: 1500.0,
+    costBasis: 150.0, // Entry price for buy
+    realizedPnL: null, // No realized P&L on buy
     executedAt: new Date(Date.now() - 14300000).toISOString(),
     eToroTradeId: "etoro-trade-001",
     auditTrailUrl: "/audit/trade-1",
@@ -23,6 +30,8 @@ const mockTrades = [
     quantity: 2,
     price: 140.0,
     totalValue: 280.0,
+    costBasis: 135.0, // Original entry price
+    realizedPnL: (140.0 - 135.0) * 2, // $10 profit
     executedAt: new Date(Date.now() - 7100000).toISOString(),
     eToroTradeId: "etoro-trade-002",
     auditTrailUrl: "/audit/trade-2",
@@ -36,6 +45,8 @@ const mockTrades = [
     quantity: 5,
     price: 320.0,
     totalValue: 1600.0,
+    costBasis: 320.0,
+    realizedPnL: null,
     executedAt: new Date(Date.now() - 21600000).toISOString(),
     eToroTradeId: "etoro-trade-003",
     auditTrailUrl: "/audit/trade-3",
@@ -49,6 +60,8 @@ const mockTrades = [
     quantity: 8,
     price: 245.0,
     totalValue: 1960.0,
+    costBasis: 245.0,
+    realizedPnL: null,
     executedAt: new Date(Date.now() - 43200000).toISOString(),
     eToroTradeId: "etoro-trade-004",
     auditTrailUrl: "/audit/trade-4",
@@ -56,22 +69,44 @@ const mockTrades = [
   },
 ];
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const limit = parseInt(searchParams.get("limit") || "50");
-  const offset = parseInt(searchParams.get("offset") || "0");
+export async function GET(request: NextRequest) {
+  try {
+    // Authenticate request
+    const authError = await authenticateRequest(request);
+    if (authError) return authError;
 
-  // TODO: Replace with actual database query
-  // const trades = await db.trades.findMany({
-  //   where: { executedAt: { gte: since } },
-  //   limit,
-  //   offset,
-  // });
+    const { searchParams } = new URL(request.url);
+    const { limit, offset, errors } = validatePaginationParams(searchParams);
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 300));
+    if (errors.length > 0) {
+      return NextResponse.json(
+        { error: "Validation failed", details: errors },
+        { status: 400 }
+      );
+    }
 
-  const paginatedTrades = mockTrades.slice(offset, offset + limit);
+    // TODO: Replace with actual database query
+    // const trades = await db.trades.findMany({
+    //   where: { executedAt: { gte: since } },
+    //   take: limit,
+    //   skip: offset,
+    // });
 
-  return NextResponse.json(paginatedTrades);
+    // Simulate network delay
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    const paginatedTrades = mockTrades.slice(offset, offset + limit);
+
+    return NextResponse.json(paginatedTrades);
+  } catch (error) {
+    console.error("Error fetching trades:", error);
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      },
+      { status: 500 }
+    );
+  }
 }

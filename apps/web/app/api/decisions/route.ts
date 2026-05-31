@@ -1,4 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import {
+  authenticateRequest,
+  validatePaginationParams,
+} from "@/lib/auth";
 
 // Mock data - replace with actual database query
 const mockDecisions = [
@@ -59,15 +63,38 @@ const mockDecisions = [
   },
 ];
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const limit = parseInt(searchParams.get("limit") || "20");
+export async function GET(request: NextRequest) {
+  try {
+    // Authenticate request
+    const authError = await authenticateRequest(request);
+    if (authError) return authError;
 
-  // TODO: Replace with actual database query
-  // const decisions = await db.decisions.findMany({ limit });
+    const { searchParams } = new URL(request.url);
+    const { limit, errors } = validatePaginationParams(searchParams);
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 300));
+    if (errors.length > 0) {
+      return NextResponse.json(
+        { error: "Validation failed", details: errors },
+        { status: 400 }
+      );
+    }
 
-  return NextResponse.json(mockDecisions.slice(0, limit));
+    // TODO: Replace with actual database query
+    // const decisions = await db.decisions.findMany({ limit });
+
+    // Simulate network delay
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    return NextResponse.json(mockDecisions.slice(0, limit));
+  } catch (error) {
+    console.error("Error fetching decisions:", error);
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      },
+      { status: 500 }
+    );
+  }
 }

@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { authenticateRequest } from "@/lib/auth";
 
 // Mock data - replace with actual eToro API integration
 const mockPositions = [
@@ -8,8 +9,9 @@ const mockPositions = [
     quantity: 10,
     entryPrice: 150.0,
     currentPrice: 155.0,
-    unrealizedPnL: 50.0,
-    unrealizedPnLPercent: 3.33,
+    // Correct P&L calculation: (currentPrice - entryPrice) * quantity
+    unrealizedPnL: (155.0 - 150.0) * 10,
+    unrealizedPnLPercent: ((155.0 - 150.0) / 150.0) * 100,
     openedAt: new Date(Date.now() - 86400000).toISOString(),
     lastUpdated: new Date().toISOString(),
   },
@@ -19,8 +21,8 @@ const mockPositions = [
     quantity: 5,
     entryPrice: 140.0,
     currentPrice: 138.0,
-    unrealizedPnL: -10.0,
-    unrealizedPnLPercent: -1.43,
+    unrealizedPnL: (138.0 - 140.0) * 5,
+    unrealizedPnLPercent: ((138.0 - 140.0) / 140.0) * 100,
     openedAt: new Date(Date.now() - 172800000).toISOString(),
     lastUpdated: new Date().toISOString(),
   },
@@ -30,19 +32,35 @@ const mockPositions = [
     quantity: 8,
     entryPrice: 245.0,
     currentPrice: 250.0,
-    unrealizedPnL: 40.0,
-    unrealizedPnLPercent: 2.04,
+    unrealizedPnL: (250.0 - 245.0) * 8,
+    unrealizedPnLPercent: ((250.0 - 245.0) / 245.0) * 100,
     openedAt: new Date(Date.now() - 43200000).toISOString(),
     lastUpdated: new Date().toISOString(),
   },
 ];
 
-export async function GET() {
-  // TODO: Replace with actual eToro API call
-  // const positions = await eToroClient.getOpenPositions();
+export async function GET(request: NextRequest) {
+  try {
+    // Authenticate request
+    const authError = await authenticateRequest(request);
+    if (authError) return authError;
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
+    // TODO: Replace with actual eToro API call
+    // const positions = await eToroClient.getOpenPositions();
 
-  return NextResponse.json(mockPositions);
+    // Simulate network delay
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    return NextResponse.json(mockPositions);
+  } catch (error) {
+    console.error("Error fetching positions:", error);
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      },
+      { status: 500 }
+    );
+  }
 }
