@@ -1,0 +1,74 @@
+name: Deploy
+
+# Deploys to trade.aiorkesta.com when CI passes on main branch
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Only deploy if CI passed
+    needs: []
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t trade-aiorkesta:${{ github.sha }} .
+          docker tag trade-aiorkesta:${{ github.sha }} trade-aiorkesta:latest
+
+      - name: Save Docker image
+        run: |
+          docker save trade-aiorkesta:latest | gzip > trade-aiorkesta.tar.gz
+
+      # NOTE: Deployment step requires secrets to be configured:
+      # - DEPLOY_HOST: trade.aiorkesta.com server IP/hostname
+      # - DEPLOY_SSH_KEY: SSH private key for deployment
+      # - DEPLOY_USER: SSH user (e.g., ubuntu, ec2-user)
+
+      # Uncomment when deployment server is configured:
+
+      # - name: Deploy to production
+      #   env:
+      #     DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      #     DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      #   run: |
+      #     # Setup SSH
+      #     mkdir -p ~/.ssh
+      #     echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+      #     chmod 600 ~/.ssh/deploy_key
+      #     ssh-keyscan -H $DEPLOY_HOST >> ~/.ssh/known_hosts
+      #
+      #     # Upload image
+      #     scp -i ~/.ssh/deploy_key trade-aiorkesta.tar.gz $DEPLOY_USER@$DEPLOY_HOST:/tmp/
+      #
+      #     # Deploy
+      #     ssh -i ~/.ssh/deploy_key $DEPLOY_USER@$DEPLOY_HOST << 'EOF'
+      #       cd /opt/trade-aiorkesta
+      #       docker load < /tmp/trade-aiorkesta.tar.gz
+      #       docker-compose up -d --no-build
+      #       rm /tmp/trade-aiorkesta.tar.gz
+      #
+      #       # Health check
+      #       sleep 10
+      #       curl -f http://localhost:3000/api/health || exit 1
+      #     EOF
+
+      - name: Deployment placeholder
+        run: |
+          echo "Docker image built: trade-aiorkesta:${{ github.sha }}"
+          echo ""
+          echo "To complete deployment setup, configure these secrets in GitHub:"
+          echo "  - DEPLOY_HOST: production server address"
+          echo "  - DEPLOY_SSH_KEY: SSH private key"
+          echo "  - DEPLOY_USER: SSH username"
+          echo ""
+          echo "Then uncomment the deployment steps in .github/workflows/deploy.yml"

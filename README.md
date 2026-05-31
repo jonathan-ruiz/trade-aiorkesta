@@ -34,3 +34,71 @@ This tool is provided as-is with no warranty. Authors accept no liability for tr
 - Manual approval gate for trades > configured threshold
 - Full audit trail
 - Manual override at any time
+
+## Development
+
+```bash
+# Install dependencies
+npm install  # or pnpm/yarn
+
+# Run development server
+npm run dev
+
+# Run tests
+npm test
+
+# Typecheck
+npm run typecheck
+
+# Lint
+npm run lint
+```
+
+## Deployment
+
+### Quick Start (Local)
+
+```bash
+# Copy environment template
+cp .env.example .env
+# Edit .env with your eToro demo API key
+
+# Start with Docker Compose
+make deploy-local
+# or: docker-compose up -d --build
+
+# Verify
+make health
+```
+
+### Production Deployment to trade.aiorkesta.com
+
+See [docs/runbooks/deployment.md](docs/runbooks/deployment.md) for full deployment procedures, monitoring, and troubleshooting.
+
+**Prerequisites:**
+- SSL certificates in `deploy/certs/`
+- Environment variables configured
+- Docker & Docker Compose on server
+
+**CI/CD:**
+- GitHub Actions runs typecheck + test + build on all PRs
+- Auto-merge enabled for green PRs (no `no-auto-merge` label)
+- Deployment to production on main branch merge
+
+**Commands:**
+```bash
+make help          # Show all commands
+make build         # Build Docker images
+make up            # Start services
+make logs          # Tail logs
+make health        # Check service health
+make clean         # Clean up containers
+```
+
+## Infrastructure
+
+- **CI:** GitHub Actions (`.github/workflows/ci.yml`)
+- **Deployment:** Docker + nginx reverse proxy
+- **Domain:** trade.aiorkesta.com
+- **Monitoring:** Container health checks + nginx logs
+- **Security:** SSL/TLS, rate limiting, CSP headers

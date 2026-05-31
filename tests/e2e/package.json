@@ -1,0 +1,21 @@
+{
+  "name": "@trade-aiorkesta/e2e-tests",
+  "version": "0.1.0",
+  "description": "End-to-end validation tests for trade-aiorkesta",
+  "private": true,
+  "scripts": {
+    "test": "ts-node src/paper-trade-dry-run.ts",
+    "test:kill-switch": "ts-node src/kill-switch-test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@trade-aiorkesta/decision-layer": "file:../../packages/decision-layer",
+    "@trade-aiorkesta/risk-management": "file:../../packages/risk-management",
+    "@trade-aiorkesta/etoro-client": "file:../../packages/etoro-client",
+    "@trade-aiorkesta/audit": "file:../../packages/audit"
+  }
+}

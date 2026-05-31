@@ -1,0 +1,51 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Testing
+coverage
+*.log
+
+# Build outputs
+.next
+out
+dist
+build
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env*.local
+!.env.example
+
+# Certificates and secrets
+deploy/certs/*.pem
+deploy/certs/*.key
+*.pem
+*.key
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Docker
+*.tar.gz
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Runtime
+.cache
+tmp
+temp
