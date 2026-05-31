@@ -1,11 +1,10 @@
 # Multi-stage build for trade.aiorkesta.com
 # Supports monorepo structure with apps/web frontend
 
-FROM node:20-alpine AS base
+FROM node:20-slim AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Copy lockfile and package.json (supports npm/pnpm/yarn/bun)
