@@ -10,6 +10,13 @@ WORKDIR /app
 
 # Copy lockfile and package.json (supports npm/pnpm/yarn/bun)
 COPY package*.json yarn.lock* pnpm-lock.yaml* bun.lockb* ./
+# Copy workspace package.json files for monorepo
+COPY apps/web/package.json ./apps/web/
+COPY apps/server/package.json ./apps/server/
+COPY packages/audit/package.json ./packages/audit/
+COPY packages/decision-layer/package.json ./packages/decision-layer/
+COPY packages/etoro-client/package.json ./packages/etoro-client/
+COPY packages/risk-management/package.json ./packages/risk-management/
 
 # Install dependencies based on lockfile
 RUN \
